@@ -161,6 +161,9 @@ function utsm_sections_display_form($style_slug = null) {
     $style_data = $style_slug ? utsm_sections_get_style($style_slug) : null;
     $theme_data = utsm_file_get_theme_data();
     
+    // Afficher la palette de couleurs en haut
+    utsm_sections_display_color_palette($theme_data);
+    
     ?>
     <form method="post" action="">
         <?php wp_nonce_field('utsm_section_style_nonce', 'utsm_section_nonce'); ?>
@@ -179,78 +182,87 @@ function utsm_sections_display_form($style_slug = null) {
         
         <div class="utsm-form-group">
             <label>Couleur de fond</label>
-            <select name="background_color">
-                <option value="">Sélectionner...</option>
-                <?php 
-                $current_bg = $style_data['styles']['color']['background'] ?? '';
-                // Convertir le format vers le format du formulaire pour la comparaison
-                $current_bg_converted = '';
-                if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_bg, $matches)) {
-                    // Format CSS: var(--wp--preset--color--accent-1)
-                    $current_bg_converted = 'var:preset|color|' . $matches[1];
-                } elseif (strpos($current_bg, 'var:preset|color|') === 0) {
-                    // Format déjà correct: var:preset|color|accent-1
-                    $current_bg_converted = $current_bg;
-                }
-                foreach ($theme_data['colors'] as $color):
-                    $option_value = 'var:preset|color|' . $color['slug'];
-                ?>
-                    <option value="<?php echo $option_value; ?>" 
-                        <?php selected($current_bg_converted == $option_value); ?>>
-                        <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="background_color" onchange="updateColorPreview(this, 'bg-preview')" style="flex: 1;">
+                    <option value="">Sélectionner...</option>
+                    <?php 
+                    $current_bg = $style_data['styles']['color']['background'] ?? '';
+                    // Convertir le format vers le format du formulaire pour la comparaison
+                    $current_bg_converted = '';
+                    if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_bg, $matches)) {
+                        // Format CSS: var(--wp--preset--color--accent-1)
+                        $current_bg_converted = 'var:preset|color|' . $matches[1];
+                    } elseif (strpos($current_bg, 'var:preset|color|') === 0) {
+                        // Format déjà correct: var:preset|color|accent-1
+                        $current_bg_converted = $current_bg;
+                    }
+                    foreach ($theme_data['colors'] as $color):
+                        $option_value = 'var:preset|color|' . $color['slug'];
+                    ?>
+                        <option value="<?php echo $option_value; ?>" data-color="<?php echo esc_attr($color['color']); ?>" 
+                            <?php selected($current_bg_converted == $option_value); ?>>
+                            <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div id="bg-preview" class="utsm-color-preview-box" style="width: 40px; height: 40px; border: 2px solid #ccc; border-radius: 4px; background: <?php echo $current_bg ? utsm_convert_color_for_preview($current_bg, $theme_data) : 'transparent'; ?>; background-image: <?php echo !$current_bg || utsm_convert_color_for_preview($current_bg, $theme_data) === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none'; ?>; background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+            </div>
         </div>
         
         <div class="utsm-form-group">
             <label>Couleur de texte</label>
-            <select name="text_color">
-                <option value="">Sélectionner...</option>
-                <?php 
-                $current_text = $style_data['styles']['color']['text'] ?? '';
-                $current_text_converted = '';
-                if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_text, $matches)) {
-                    // Format CSS: var(--wp--preset--color--base-3)
-                    $current_text_converted = 'var:preset|color|' . $matches[1];
-                } elseif (strpos($current_text, 'var:preset|color|') === 0) {
-                    // Format déjà correct: var:preset|color|base-3
-                    $current_text_converted = $current_text;
-                }
-                foreach ($theme_data['colors'] as $color):
-                    $option_value = 'var:preset|color|' . $color['slug'];
-                ?>
-                    <option value="<?php echo $option_value; ?>" 
-                        <?php selected($current_text_converted == $option_value); ?>>
-                        <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="text_color" onchange="updateColorPreview(this, 'text-preview')" style="flex: 1;">
+                    <option value="">Sélectionner...</option>
+                    <?php 
+                    $current_text = $style_data['styles']['color']['text'] ?? '';
+                    $current_text_converted = '';
+                    if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_text, $matches)) {
+                        // Format CSS: var(--wp--preset--color--base-3)
+                        $current_text_converted = 'var:preset|color|' . $matches[1];
+                    } elseif (strpos($current_text, 'var:preset|color|') === 0) {
+                        // Format déjà correct: var:preset|color|base-3
+                        $current_text_converted = $current_text;
+                    }
+                    foreach ($theme_data['colors'] as $color):
+                        $option_value = 'var:preset|color|' . $color['slug'];
+                    ?>
+                        <option value="<?php echo $option_value; ?>" data-color="<?php echo esc_attr($color['color']); ?>" 
+                            <?php selected($current_text_converted == $option_value); ?>>
+                            <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div id="text-preview" class="utsm-color-preview-box" style="width: 40px; height: 40px; border: 2px solid #ccc; border-radius: 4px; background: <?php echo $current_text ? utsm_convert_color_for_preview($current_text, $theme_data) : 'transparent'; ?>; background-image: <?php echo !$current_text || utsm_convert_color_for_preview($current_text, $theme_data) === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none'; ?>; background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+            </div>
         </div>
         
         <div class="utsm-form-group">
             <label>Couleur de bordure</label>
-            <select name="border_color">
-                <option value="">Sélectionner...</option>
-                <?php 
-                $current_border = $style_data['styles']['border']['color'] ?? '';
-                $current_border_converted = '';
-                if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_border, $matches)) {
-                    // Format CSS: var(--wp--preset--color--accent-1)
-                    $current_border_converted = 'var:preset|color|' . $matches[1];
-                } elseif (strpos($current_border, 'var:preset|color|') === 0) {
-                    // Format déjà correct: var:preset|color|accent-1
-                    $current_border_converted = $current_border;
-                }
-                foreach ($theme_data['colors'] as $color):
-                    $option_value = 'var:preset|color|' . $color['slug'];
-                ?>
-                    <option value="<?php echo $option_value; ?>" 
-                        <?php selected($current_border_converted == $option_value); ?>>
-                        <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="border_color" onchange="updateColorPreview(this, 'border-preview')" style="flex: 1;">
+                    <option value="">Sélectionner...</option>
+                    <?php 
+                    $current_border = $style_data['styles']['border']['color'] ?? '';
+                    $current_border_converted = '';
+                    if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_border, $matches)) {
+                        // Format CSS: var(--wp--preset--color--accent-1)
+                        $current_border_converted = 'var:preset|color|' . $matches[1];
+                    } elseif (strpos($current_border, 'var:preset|color|') === 0) {
+                        // Format déjà correct: var:preset|color|accent-1
+                        $current_border_converted = $current_border;
+                    }
+                    foreach ($theme_data['colors'] as $color):
+                        $option_value = 'var:preset|color|' . $color['slug'];
+                    ?>
+                        <option value="<?php echo $option_value; ?>" data-color="<?php echo esc_attr($color['color']); ?>" 
+                            <?php selected($current_border_converted == $option_value); ?>>
+                            <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div id="border-preview" class="utsm-color-preview-box" style="width: 40px; height: 40px; border: 2px solid #ccc; border-radius: 4px; background: <?php echo $current_border ? utsm_convert_color_for_preview($current_border, $theme_data) : 'transparent'; ?>; background-image: <?php echo !$current_border || utsm_convert_color_for_preview($current_border, $theme_data) === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none'; ?>; background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+            </div>
         </div>
         
         <div class="utsm-form-group">
@@ -864,52 +876,61 @@ function utsm_sections_render_internal_block_form($block_type, $block_styles, $i
         
         <div class="utsm-form-group">
             <label>Couleur de fond</label>
-            <select name="internal_blocks[<?php echo $index; ?>][background_color]">
-                <option value="">Aucune</option>
-                <?php foreach ($theme_data['colors'] as $color): 
-                    $option_value = 'var:preset|color|' . $color['slug'];
-                ?>
-                    <option value="<?php echo $option_value; ?>" <?php selected($bg_converted == $option_value); ?>>
-                        <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="internal_blocks[<?php echo $index; ?>][background_color]" onchange="updateColorPreview(this, 'internal-bg-preview-<?php echo $index; ?>')" style="flex: 1;">
+                    <option value="">Aucune</option>
+                    <?php foreach ($theme_data['colors'] as $color): 
+                        $option_value = 'var:preset|color|' . $color['slug'];
+                    ?>
+                        <option value="<?php echo $option_value; ?>" data-color="<?php echo esc_attr($color['color']); ?>" <?php selected($bg_converted == $option_value); ?>>
+                            <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div id="internal-bg-preview-<?php echo $index; ?>" class="utsm-color-preview-box" style="width: 40px; height: 40px; border: 2px solid #ccc; border-radius: 4px; background: <?php echo $bg_color ? utsm_convert_color_for_preview($bg_color, $theme_data) : 'transparent'; ?>; background-image: <?php echo !$bg_color || utsm_convert_color_for_preview($bg_color, $theme_data) === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none'; ?>; background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+            </div>
         </div>
         
         <div class="utsm-form-group">
             <label>Couleur du texte</label>
-            <select name="internal_blocks[<?php echo $index; ?>][text_color]">
-                <option value="">Aucune</option>
-                <?php foreach ($theme_data['colors'] as $color): 
-                    $option_value = 'var:preset|color|' . $color['slug'];
-                ?>
-                    <option value="<?php echo $option_value; ?>" <?php selected($text_converted == $option_value); ?>>
-                        <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="internal_blocks[<?php echo $index; ?>][text_color]" onchange="updateColorPreview(this, 'internal-text-preview-<?php echo $index; ?>')" style="flex: 1;">
+                    <option value="">Aucune</option>
+                    <?php foreach ($theme_data['colors'] as $color): 
+                        $option_value = 'var:preset|color|' . $color['slug'];
+                    ?>
+                        <option value="<?php echo $option_value; ?>" data-color="<?php echo esc_attr($color['color']); ?>" <?php selected($text_converted == $option_value); ?>>
+                            <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div id="internal-text-preview-<?php echo $index; ?>" class="utsm-color-preview-box" style="width: 40px; height: 40px; border: 2px solid #ccc; border-radius: 4px; background: <?php echo $text_color ? utsm_convert_color_for_preview($text_color, $theme_data) : 'transparent'; ?>; background-image: <?php echo !$text_color || utsm_convert_color_for_preview($text_color, $theme_data) === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none'; ?>; background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+            </div>
         </div>
         
         <div class="utsm-form-group">
             <label>Couleur de bordure</label>
-            <select name="internal_blocks[<?php echo $index; ?>][border_color]">
-                <option value="">Aucune</option>
-                <?php 
-                $border_converted = '';
-                $current_border = $block_styles['border']['color'] ?? '';
-                if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_border, $matches)) {
-                    $border_converted = 'var:preset|color|' . $matches[1];
-                } elseif (strpos($current_border, 'var:preset|color|') === 0) {
-                    $border_converted = $current_border;
-                }
-                foreach ($theme_data['colors'] as $color): 
-                    $option_value = 'var:preset|color|' . $color['slug'];
-                ?>
-                    <option value="<?php echo $option_value; ?>" <?php selected($border_converted == $option_value); ?>>
-                        <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select name="internal_blocks[<?php echo $index; ?>][border_color]" onchange="updateColorPreview(this, 'internal-border-preview-<?php echo $index; ?>')" style="flex: 1;">
+                    <option value="">Aucune</option>
+                    <?php 
+                    $border_converted = '';
+                    $current_border = $block_styles['border']['color'] ?? '';
+                    if (preg_match('/var\(--wp--preset--color--(.+)\)/', $current_border, $matches)) {
+                        $border_converted = 'var:preset|color|' . $matches[1];
+                    } elseif (strpos($current_border, 'var:preset|color|') === 0) {
+                        $border_converted = $current_border;
+                    }
+                    foreach ($theme_data['colors'] as $color): 
+                        $option_value = 'var:preset|color|' . $color['slug'];
+                    ?>
+                        <option value="<?php echo $option_value; ?>" data-color="<?php echo esc_attr($color['color']); ?>" <?php selected($border_converted == $option_value); ?>>
+                            <?php echo $color['name']; ?> (<?php echo $color['color']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div id="internal-border-preview-<?php echo $index; ?>" class="utsm-color-preview-box" style="width: 40px; height: 40px; border: 2px solid #ccc; border-radius: 4px; background: <?php echo $current_border ? utsm_convert_color_for_preview($current_border, $theme_data) : 'transparent'; ?>; background-image: <?php echo !$current_border || utsm_convert_color_for_preview($current_border, $theme_data) === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none'; ?>; background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+            </div>
         </div>
     </div>
     <?php
@@ -995,12 +1016,83 @@ function utsm_render_block_preview($block_type, $bg_color, $text_color, $border_
                     </div>';
                     
         case 'core/group':
-            return '<div class="utsm-preview-group" style="' . $style . '">
-                        <div class="utsm-group-content">Groupe de contenu</div>
-                    </div>';
+            return '<div class="utsm-preview-group" style="' . $style . '">Groupe de contenu</div>';
                     
         default:
             $block_name = str_replace('core/', '', $block_type);
             return '<div class="utsm-preview-default" style="' . $style . '">' . ucfirst($block_name) . '</div>';
     }
+}
+
+function utsm_sections_display_color_palette($theme_data) {
+    if (empty($theme_data['colors'])) {
+        return;
+    }
+    
+    ?>
+    <div class="utsm-color-palette" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 16px;">🎨 Palette de couleurs du thème</h3>
+            <button type="button" id="toggle-color-palette" style="background: none; border: 1px solid #ccc; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">Masquer</button>
+        </div>
+        <div class="utsm-color-swatches" id="color-palette-content" style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <?php foreach ($theme_data['colors'] as $color): ?>
+                <div class="utsm-color-swatch" style="display: flex; align-items: center; background: white; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd; min-width: 150px;">
+                    <div class="utsm-color-preview" style="width: 24px; height: 24px; border-radius: 3px; border: 1px solid #ccc; margin-right: 10px; background-color: <?php echo esc_attr($color['color']); ?>"></div>
+                    <div class="utsm-color-info">
+                        <div style="font-weight: 500; font-size: 13px;"><?php echo esc_html($color['name']); ?></div>
+                        <div style="font-size: 11px; color: #666;"><?php echo esc_html($color['slug']); ?></div>
+                        <div style="font-size: 11px; color: #999;"><?php echo esc_html($color['color']); ?></div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggle-color-palette');
+        const paletteContent = document.getElementById('color-palette-content');
+        
+        if (toggleBtn && paletteContent) {
+            toggleBtn.addEventListener('click', function() {
+                if (paletteContent.style.display === 'none') {
+                    paletteContent.style.display = 'flex';
+                    toggleBtn.textContent = 'Masquer';
+                } else {
+                    paletteContent.style.display = 'none';
+                    toggleBtn.textContent = 'Afficher';
+                }
+            });
+        }
+    });
+    
+    function updateColorPreview(selectElement, previewId) {
+        const previewBox = document.getElementById(previewId);
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        
+        if (selectedOption && selectedOption.dataset.color && previewBox) {
+            const color = selectedOption.dataset.color;
+            
+            if (color === 'transparent' || color === '' || !color) {
+                // Afficher le damier pour transparent
+                previewBox.style.background = 'transparent';
+                previewBox.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)';
+                previewBox.style.backgroundSize = '8px 8px';
+                previewBox.style.backgroundPosition = '0 0, 0 4px, 4px -4px, -4px 0px';
+            } else {
+                // Afficher la couleur solide
+                previewBox.style.background = color;
+                previewBox.style.backgroundImage = 'none';
+            }
+        } else if (previewBox) {
+            // Pas de sélection - afficher le damier
+            previewBox.style.background = 'transparent';
+            previewBox.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)';
+            previewBox.style.backgroundSize = '8px 8px';
+            previewBox.style.backgroundPosition = '0 0, 0 4px, 4px -4px, -4px 0px';
+        }
+    }
+    </script>
+    <?php
 }
