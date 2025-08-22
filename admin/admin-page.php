@@ -200,6 +200,43 @@ function utsm_admin_display_form($style_slug = null) {
         </div>
         
         <div class="wsm-form-group">
+            <label>Font Weight</label>
+            <select name="font_weight">
+                <option value="">Hériter (inherit)</option>
+                <option value="100" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '100'); ?>>100 - Thin</option>
+                <option value="200" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '200'); ?>>200 - Extra Light</option>
+                <option value="300" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '300'); ?>>300 - Light</option>
+                <option value="400" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '400'); ?>>400 - Normal</option>
+                <option value="500" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '500'); ?>>500 - Medium</option>
+                <option value="600" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '600'); ?>>600 - Semi Bold</option>
+                <option value="700" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '700'); ?>>700 - Bold</option>
+                <option value="800" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '800'); ?>>800 - Extra Bold</option>
+                <option value="900" <?php selected(isset($style_data['styles']['typography']['fontWeight']) && $style_data['styles']['typography']['fontWeight'] == '900'); ?>>900 - Black</option>
+            </select>
+        </div>
+        
+        <div class="wsm-form-group">
+            <label>Font Style</label>
+            <select name="font_style">
+                <option value="">Hériter (inherit)</option>
+                <option value="normal" <?php selected(isset($style_data['styles']['typography']['fontStyle']) && $style_data['styles']['typography']['fontStyle'] == 'normal'); ?>>Normal</option>
+                <option value="italic" <?php selected(isset($style_data['styles']['typography']['fontStyle']) && $style_data['styles']['typography']['fontStyle'] == 'italic'); ?>>Italic</option>
+                <option value="oblique" <?php selected(isset($style_data['styles']['typography']['fontStyle']) && $style_data['styles']['typography']['fontStyle'] == 'oblique'); ?>>Oblique</option>
+            </select>
+        </div>
+        
+        <div class="wsm-form-group">
+            <label>Text Transform (Casse)</label>
+            <select name="text_transform">
+                <option value="">Hériter (inherit)</option>
+                <option value="none" <?php selected(isset($style_data['styles']['typography']['textTransform']) && $style_data['styles']['typography']['textTransform'] == 'none'); ?>>Aucune</option>
+                <option value="uppercase" <?php selected(isset($style_data['styles']['typography']['textTransform']) && $style_data['styles']['typography']['textTransform'] == 'uppercase'); ?>>MAJUSCULES</option>
+                <option value="lowercase" <?php selected(isset($style_data['styles']['typography']['textTransform']) && $style_data['styles']['typography']['textTransform'] == 'lowercase'); ?>>minuscules</option>
+                <option value="capitalize" <?php selected(isset($style_data['styles']['typography']['textTransform']) && $style_data['styles']['typography']['textTransform'] == 'capitalize'); ?>>Première Lettre</option>
+            </select>
+        </div>
+        
+        <div class="wsm-form-group">
             <label>Block Types</label>
             <select name="block_types[]" multiple style="height: 100px;">
                 <option value="core/heading" <?php echo isset($style_data['blockTypes']) && in_array('core/heading', $style_data['blockTypes']) ? 'selected' : ''; ?>>Heading</option>

@@ -48,6 +48,18 @@ function utsm_generate_typography_css($typography) {
         $css_rules[] = 'line-height: ' . $typography['lineHeight'];
     }
     
+    if (!empty($typography['fontWeight']) && $typography['fontWeight'] !== 'inherit') {
+        $css_rules[] = 'font-weight: ' . $typography['fontWeight'];
+    }
+    
+    if (!empty($typography['fontStyle']) && $typography['fontStyle'] !== 'inherit') {
+        $css_rules[] = 'font-style: ' . $typography['fontStyle'];
+    }
+    
+    if (!empty($typography['textTransform']) && $typography['textTransform'] !== 'inherit') {
+        $css_rules[] = 'text-transform: ' . $typography['textTransform'];
+    }
+    
     return implode('; ', $css_rules);
 }
 

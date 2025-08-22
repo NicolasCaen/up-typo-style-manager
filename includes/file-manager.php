@@ -75,16 +75,21 @@ function utsm_file_add_or_update_style($data) {
         'blockTypes' => array_map('sanitize_text_field', $data['block_types'] ?? []),
         'styles' => [
             'typography' => [
-                'fontSize' => sanitize_text_field($data['font_size']) ?: null,
-                'fontFamily' => sanitize_text_field($data['font_family']) ?: null,
-                'letterSpacing' => sanitize_text_field($data['letter_spacing']) ?: null,
-                'lineHeight' => sanitize_text_field($data['line_height']) ?: null,
+                'fontSize' => sanitize_text_field($data['font_size']) ?: 'inherit',
+                'fontFamily' => sanitize_text_field($data['font_family']) ?: 'inherit',
+                'letterSpacing' => sanitize_text_field($data['letter_spacing']) ?: 'inherit',
+                'lineHeight' => sanitize_text_field($data['line_height']) ?: 'inherit',
+                'fontWeight' => sanitize_text_field($data['font_weight']) ?: 'inherit',
+                'fontStyle' => sanitize_text_field($data['font_style']) ?: 'inherit',
+                'textTransform' => sanitize_text_field($data['text_transform']) ?: 'inherit',
             ]
         ]
     ];
     
-    // Nettoyer les valeurs vides
-    $style_data['styles']['typography'] = array_filter($style_data['styles']['typography']);
+    // Nettoyer les valeurs vides mais garder 'inherit'
+    $style_data['styles']['typography'] = array_filter($style_data['styles']['typography'], function($value) {
+        return $value !== null && $value !== '';
+    });
     
     $file_path = utsm_file_get_styles_directory() . '/core-' . $slug . '.json';
     
@@ -152,7 +157,7 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
         
         $typography = $style_data['styles']['typography'];
         foreach ($typography as $key => $value) {
-            if ($value) {
+            if ($value && $value !== 'inherit') {
                 $theme_data['styles']['elements'][$theme_element]['typography'][$key] = $value;
             }
         }
