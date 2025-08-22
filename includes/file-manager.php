@@ -134,7 +134,14 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
         'heading-h5' => 'h5',
         'heading-h6' => 'h6',
         'paragraph' => 'p',
-        'body' => 'body'
+        'body' => 'body',
+        'list' => 'ul',
+        'list-item' => 'li',
+        'quote' => 'blockquote',
+        'cite' => 'cite',
+        'button' => 'button',
+        'link' => 'a',
+        'caption' => 'figcaption'
     ];
     
     $theme_element = $element_map[$element_type] ?? $element_type;

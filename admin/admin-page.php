@@ -238,11 +238,12 @@ function utsm_admin_display_form($style_slug = null) {
         
         <div class="wsm-form-group">
             <label>Block Types</label>
-            <select name="block_types[]" multiple style="height: 100px;">
+            <select name="block_types[]" multiple style="height: 120px;">
                 <option value="core/heading" <?php echo isset($style_data['blockTypes']) && in_array('core/heading', $style_data['blockTypes']) ? 'selected' : ''; ?>>Heading</option>
                 <option value="core/paragraph" <?php echo isset($style_data['blockTypes']) && in_array('core/paragraph', $style_data['blockTypes']) ? 'selected' : ''; ?>>Paragraph</option>
                 <option value="core/list" <?php echo isset($style_data['blockTypes']) && in_array('core/list', $style_data['blockTypes']) ? 'selected' : ''; ?>>List</option>
                 <option value="core/quote" <?php echo isset($style_data['blockTypes']) && in_array('core/quote', $style_data['blockTypes']) ? 'selected' : ''; ?>>Blockquote</option>
+                <option value="core/button" <?php echo isset($style_data['blockTypes']) && in_array('core/button', $style_data['blockTypes']) ? 'selected' : ''; ?>>Button</option>
             </select>
         </div>
         
@@ -281,6 +282,27 @@ function utsm_admin_display_form($style_slug = null) {
                 ];
             } elseif ($block_type === 'core/paragraph') {
                 $element_buttons = ['paragraph' => 'Tous les paragraphes'];
+            } elseif ($block_type === 'core/list') {
+                $element_buttons = [
+                    'list' => 'Toutes les listes (ul/ol)',
+                    'list-item' => 'Tous les éléments de liste (li)'
+                ];
+            } elseif ($block_type === 'core/quote') {
+                $element_buttons = [
+                    'quote' => 'Toutes les citations (blockquote)',
+                    'cite' => 'Toutes les sources de citation (cite)'
+                ];
+            }
+            
+            // Ajouter les boutons pour les éléments de blocs spécifiques
+            if (in_array($block_type, ['core/button', 'core/heading', 'core/paragraph', 'core/list', 'core/quote'])) {
+                // Boutons pour les éléments HTML génériques
+                $generic_buttons = [
+                    'button' => 'Tous les boutons',
+                    'link' => 'Tous les liens (a)',
+                    'caption' => 'Toutes les légendes'
+                ];
+                $element_buttons = array_merge($element_buttons ?? [], $generic_buttons);
             }
             
             foreach ($element_buttons as $element_type => $label):
