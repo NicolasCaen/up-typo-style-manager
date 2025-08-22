@@ -205,3 +205,103 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
         return $result;
     }
 }
+
+/**
+ * Applique un style aux blocs du thème (styles->blocks)
+ */
+function utsm_file_apply_to_theme_blocks($style_slug, $block_type, $inner_block = '') {
+    $style_data = utsm_file_get_style($style_slug);
+    if (!$style_data) return false;
+    
+    $theme_json_path = get_stylesheet_directory() . '/theme.json';
+    if (!file_exists($theme_json_path)) return false;
+    
+    $theme_data = json_decode(file_get_contents($theme_json_path), true);
+    if (!$theme_data) return false;
+    
+    // Créer la structure si elle n'existe pas
+    if (!isset($theme_data['styles'])) {
+        $theme_data['styles'] = [];
+    }
+    if (!isset($theme_data['styles']['blocks'])) {
+        $theme_data['styles']['blocks'] = [];
+    }
+    if (!isset($theme_data['styles']['blocks'][$block_type])) {
+        $theme_data['styles']['blocks'][$block_type] = [];
+    }
+    
+    // Déterminer le chemin d'application selon si on a un inner block ou non
+    if (!empty($inner_block)) {
+        // Application à un inner block (ex: core/cover -> elements.button)
+        if (!isset($theme_data['styles']['blocks'][$block_type]['elements'])) {
+            $theme_data['styles']['blocks'][$block_type]['elements'] = [];
+        }
+        
+        // Traiter les inner blocks qui commencent par "elements."
+        if (strpos($inner_block, 'elements.') === 0) {
+            // Extraire l'élément après "elements." (ex: "elements.button" -> "button")
+            $element_key = substr($inner_block, 9); // Enlever "elements."
+        } else {
+            // Mapper les autres inner blocks vers les éléments HTML correspondants
+            $inner_block_map = [
+                'core/paragraph' => 'p',
+                'core/heading' => 'h1', // Par défaut h1, mais pourrait être configuré
+                'core/list' => 'ul',
+                'core/list-item' => 'li',
+                'core/quote' => 'blockquote',
+                'core/button' => 'button'
+            ];
+            
+            $element_key = $inner_block_map[$inner_block] ?? $inner_block;
+        }
+        
+        if (!isset($theme_data['styles']['blocks'][$block_type]['elements'][$element_key])) {
+            $theme_data['styles']['blocks'][$block_type]['elements'][$element_key] = [];
+        }
+        
+        // Appliquer les styles de typographie à l'inner block
+        if (isset($style_data['styles']['typography'])) {
+            if (!isset($theme_data['styles']['blocks'][$block_type]['elements'][$element_key]['typography'])) {
+                $theme_data['styles']['blocks'][$block_type]['elements'][$element_key]['typography'] = [];
+            }
+            
+            $typography = $style_data['styles']['typography'];
+            foreach ($typography as $key => $value) {
+                if ($value && $value !== 'inherit') {
+                    $theme_data['styles']['blocks'][$block_type]['elements'][$element_key]['typography'][$key] = $value;
+                }
+            }
+        }
+        
+        error_log('UTSM: Style appliqué au inner block: ' . $block_type . ' -> ' . $element_key);
+    } else {
+        // Application directe au bloc principal
+        // Appliquer les styles de typographie
+        if (isset($style_data['styles']['typography'])) {
+            if (!isset($theme_data['styles']['blocks'][$block_type]['typography'])) {
+                $theme_data['styles']['blocks'][$block_type]['typography'] = [];
+            }
+            
+            $typography = $style_data['styles']['typography'];
+            foreach ($typography as $key => $value) {
+                if ($value && $value !== 'inherit') {
+                    $theme_data['styles']['blocks'][$block_type]['typography'][$key] = $value;
+                }
+            }
+        }
+        
+        error_log('UTSM: Style appliqué au bloc principal: ' . $block_type);
+    }
+    
+    // Sauvegarder le theme.json
+    $result = file_put_contents($theme_json_path, json_encode($theme_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    
+    if ($result === false) {
+        error_log('UTSM: Erreur lors de l\'écriture du fichier theme.json pour le bloc: ' . $block_type . (!empty($inner_block) ? ' -> ' . $inner_block : ''));
+        return false;
+    } else {
+        error_log('UTSM: Fichier theme.json mis à jour avec succès pour le bloc. Octets écrits: ' . $result);
+        error_log('UTSM: Bloc appliqué: ' . $block_type . (!empty($inner_block) ? ' -> inner block: ' . $inner_block : ''));
+        return $result;
+    }
+}

@@ -36,6 +36,31 @@ function utsm_admin_page() {
             }
         }
         
+        // Gestion de l'application aux blocs du thème
+        if (isset($_POST['apply_to_block']) && isset($_POST['style_slug']) && isset($_POST['block_type'])) {
+            $style_slug = sanitize_text_field($_POST['style_slug']);
+            $block_type = sanitize_text_field($_POST['block_type']);
+            $inner_block = isset($_POST['inner_block']) ? sanitize_text_field($_POST['inner_block']) : '';
+            
+            if (empty($block_type)) {
+                echo '<div class="notice notice-error"><p>Veuillez sélectionner un type de bloc.</p></div>';
+            } else {
+                $target_description = $block_type;
+                if (!empty($inner_block)) {
+                    $target_description .= ' -> ' . $inner_block;
+                }
+                
+                echo '<div class="notice notice-info"><p>Debug: Tentative d\'application du style "' . $style_slug . '" au bloc "' . $target_description . '"</p></div>';
+                
+                $result = utsm_file_apply_to_theme_blocks($style_slug, $block_type, $inner_block);
+                if ($result) {
+                    echo '<div class="notice notice-success"><p>Style appliqué au bloc ' . $target_description . ' avec succès! (' . $result . ' octets écrits)</p></div>';
+                } else {
+                    echo '<div class="notice notice-error"><p>Erreur lors de l\'application du style au bloc. Vérifiez les logs d\'erreur.</p></div>';
+                }
+            }
+        }
+        
         // Récupérer le style à modifier
         $edit_style = isset($_GET['edit']) ? $_GET['edit'] : null;
         ?>
@@ -271,6 +296,77 @@ function utsm_admin_display_form($style_slug = null) {
                 Appliquer aux styles globaux par défaut (body)
             </button>
         </form>
+        
+        <!-- Nouveau: Appliquer directement aux blocs du theme.json -->
+        <h4>Appliquer aux blocs (styles->blocks)</h4>
+        <p>Appliquez ce style directement à un type de bloc spécifique dans le theme.json.</p>
+        
+        <form method="post" style="margin-bottom: 20px;">
+            <input type="hidden" name="style_slug" value="<?php echo $style_slug; ?>">
+            
+            <div style="display: flex; gap: 10px; align-items: end; margin-bottom: 10px;">
+                <div>
+                    <label for="block_type"><strong>Type de bloc :</strong></label><br>
+                    <select name="block_type" id="block_type" style="min-width: 200px;">
+                        <option value="">Sélectionnez un bloc...</option>
+                        <option value="core/paragraph">Paragraphe</option>
+                        <option value="core/heading">Titre</option>
+                        <option value="core/button">Bouton</option>
+                        <option value="core/list">Liste</option>
+                        <option value="core/list-item">Element de liste</option>
+                        <option value="core/quote">Citation</option>
+                        <option value="core/image">Image</option>
+                        <option value="core/group">Groupe</option>
+                        <option value="core/cover">Couverture</option>
+                        <option value="core/columns">Colonnes</option>
+                        <option value="core/column">Colonne</option>
+                        <option value="core/media-text">Média et texte</option>
+                        <option value="core/gallery">Galerie</option>
+                        <option value="core/video">Vidéo</option>
+                        <option value="core/audio">Audio</option>
+                        <option value="core/table">Tableau</option>
+                        <option value="core/code">Code</option>
+                        <option value="core/preformatted">Préformaté</option>
+                        <option value="core/verse">Vers</option>
+                        <option value="core/pullquote">Citation mise en avant</option>
+                        <option value="core/separator">Séparateur</option>
+                        <option value="core/spacer">Espacement</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="inner_block"><strong>Inner block (optionnel) :</strong></label><br>
+                    <select name="inner_block" id="inner_block" style="min-width: 200px;">
+                        <option value="">Aucun (bloc principal)</option>
+                        <option value="elements.h1">Titres H1</option>
+                        <option value="elements.h2">Titres H2</option>
+                        <option value="elements.h3">Titres H3</option>
+                        <option value="elements.h4">Titres H4</option>
+                        <option value="elements.h5">Titres H5</option>
+                        <option value="elements.h6">Titres H6</option>
+                        <option value="elements.p">Paragraphes</option>
+                        <option value="elements.a">Liens</option>
+                        <option value="elements.button">Boutons</option>
+                        <option value="elements.ul">Listes non ordonnées</option>
+                        <option value="elements.ol">Listes ordonnées</option>
+                        <option value="elements.li">Eléments de liste</option>
+                        <option value="elements.blockquote">Citations</option>
+                        <option value="elements.cite">Sources de citation</option>
+                        <option value="elements.figcaption">Légendes</option>
+                    </select>
+                </div>
+                
+                <button type="submit" name="apply_to_block" class="button button-primary">
+                    Appliquer
+                </button>
+            </div>
+        </form>
+        
+        <hr style="margin: 20px 0;">
+        
+        <!-- Section existante pour les éléments globaux -->
+        <h4>Appliquer aux éléments globaux (styles->elements)</h4>
+        <p>Appliquez ce style aux éléments HTML globaux du thème.</p>
         
         <?php 
         $block_types = $style_data['blockTypes'] ?? [];
