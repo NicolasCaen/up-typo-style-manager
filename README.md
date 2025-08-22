@@ -71,6 +71,38 @@ UP Typo Style Manager permet de créer, modifier et appliquer des styles typogra
 
 ## Changelog
 
+### Version 1.2.0 (2025-08-22)
+
+**Nouvelles fonctionnalités :**
+- ✅ **Styles de sections** : Nouveau système complet de gestion des styles pour les sections/groupes
+- ✅ **Support border-color** : Ajout de la couleur de bordure pour les sections et blocs internes
+- ✅ **Aperçu visuel amélioré** : Prévisualisation réaliste des sections avec blocs internes intégrés
+- ✅ **Blocs internes** : Support complet des blocs internes (boutons, titres, paragraphes, listes, etc.)
+- ✅ **Normalisation des noms** : Les fichiers de styles utilisent maintenant un format standardisé (style1.json)
+
+**Améliorations :**
+- Interface dédiée pour la gestion des styles de sections
+- Aperçu en temps réel avec couleurs de fond, texte et bordure
+- Rendu conditionnel des titres H2 dans l'aperçu principal si core/heading est défini
+- Conversion automatique des couleurs var:preset vers CSS pour l'aperçu
+- Gestion intelligente des blocs vides (suppression automatique)
+
+**Structure JSON :**
+```json
+{
+  "styles": {
+    "color": { "background": "...", "text": "..." },
+    "border": { "color": "..." },
+    "blocks": {
+      "core/button": {
+        "color": { "background": "...", "text": "..." },
+        "border": { "color": "..." }
+      }
+    }
+  }
+}
+```
+
 ### Version 1.1.0 (2025-08-22)
 
 **Nouvelles fonctionnalités :**

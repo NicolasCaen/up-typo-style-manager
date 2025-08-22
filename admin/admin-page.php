@@ -445,7 +445,7 @@ function utsm_admin_display_styles_list() {
                 <small>Blocks: <?php echo implode(', ', $style['blockTypes'] ?? []); ?></small>
             </div>
             <div class="wsm-style-actions">
-                <a href="?page=up-typo-style-manager&edit=<?php echo $slug; ?>" class="button">Modifier</a>
+                <a href="?page=up-typo-style-manager-fonts&edit=<?php echo $slug; ?>" class="button">Modifier</a>
                 <a href="?page=up-typo-style-manager&delete=<?php echo $slug; ?>" class="button button-link-delete" onclick="return confirm('Êtes-vous sûr?')">Supprimer</a>
             </div>
         </div>

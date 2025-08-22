@@ -1,20 +1,21 @@
 <?php
 
 /**
- * Récupère les données du thème (font-sizes et font-families)
+ * Récupère les données du thème (font-sizes, font-families et colors)
  */
 function utsm_file_get_theme_data() {
     $theme_json_path = get_stylesheet_directory() . '/theme.json';
     
     if (!file_exists($theme_json_path)) {
-        return ['fontSizes' => [], 'fontFamilies' => []];
+        return ['fontSizes' => [], 'fontFamilies' => [], 'colors' => []];
     }
     
     $theme_data = json_decode(file_get_contents($theme_json_path), true);
     
     return [
         'fontSizes' => $theme_data['settings']['typography']['fontSizes'] ?? [],
-        'fontFamilies' => $theme_data['settings']['typography']['fontFamilies'] ?? []
+        'fontFamilies' => $theme_data['settings']['typography']['fontFamilies'] ?? [],
+        'colors' => $theme_data['settings']['color']['palette'] ?? []
     ];
 }
 
@@ -304,4 +305,245 @@ function utsm_file_apply_to_theme_blocks($style_slug, $block_type, $inner_block 
         error_log('UTSM: Bloc appliqué: ' . $block_type . (!empty($inner_block) ? ' -> inner block: ' . $inner_block : ''));
         return $result;
     }
+}
+
+/**
+ * FONCTIONS POUR LA GESTION DES STYLES DE SECTIONS
+ */
+
+function utsm_sections_get_styles_directory() {
+    return get_stylesheet_directory() . '/styles/sections';
+}
+
+function utsm_sections_get_all_styles() {
+    $dir = utsm_sections_get_styles_directory();
+    $styles = [];
+    
+    if (!is_dir($dir)) return $styles;
+    
+    $files = glob($dir . '/*.json');
+    
+    foreach ($files as $file) {
+        $content = file_get_contents($file);
+        $data = json_decode($content, true);
+        if ($data && isset($data['slug'])) {
+            $styles[$data['slug']] = $data;
+        }
+    }
+    
+    return $styles;
+}
+
+function utsm_sections_get_style($slug) {
+    $file = utsm_sections_get_styles_directory() . '/' . $slug . '.json';
+    
+    
+    if (!file_exists($file)) {
+        // Essayer de chercher par le nom de fichier directement
+        $directory = utsm_sections_get_styles_directory();
+        $files = glob($directory . '/*.json');
+        foreach ($files as $json_file) {
+            $content = file_get_contents($json_file);
+            $data = json_decode($content, true);
+            if ($data && isset($data['slug']) && $data['slug'] === $slug) {
+                return $data;
+            }
+        }
+        return null;
+    }
+    
+    $content = file_get_contents($file);
+    return json_decode($content, true);
+}
+
+function utsm_sections_apply_to_theme_elements($style_slug, $element_type) {
+    $style_data = utsm_sections_get_style($style_slug);
+    if (!$style_data) return false;
+    
+    $theme_json_path = get_stylesheet_directory() . '/theme.json';
+    if (!file_exists($theme_json_path)) return false;
+    
+    $theme_data = json_decode(file_get_contents($theme_json_path), true);
+    if (!$theme_data) return false;
+    
+    // Appliquer les couleurs aux éléments globaux avec conversion de format
+    if (isset($style_data['styles']['color'])) {
+        if (!isset($theme_data['styles'])) $theme_data['styles'] = [];
+        if (!isset($theme_data['styles']['elements'])) $theme_data['styles']['elements'] = [];
+        if (!isset($theme_data['styles']['elements'][$element_type])) $theme_data['styles']['elements'][$element_type] = [];
+        
+        // Convertir les couleurs au format var:preset|color|xxx
+        $converted_colors = [];
+        foreach ($style_data['styles']['color'] as $property => $value) {
+            if (preg_match('/var\(--wp--preset--color--(.+)\)/', $value, $matches)) {
+                $converted_colors[$property] = 'var:preset|color|' . $matches[1];
+            } elseif (strpos($value, 'var:preset|color|') === 0) {
+                $converted_colors[$property] = $value;
+            } else {
+                $converted_colors[$property] = $value;
+            }
+        }
+        
+        $theme_data['styles']['elements'][$element_type]['color'] = $converted_colors;
+    }
+    
+    return file_put_contents($theme_json_path, json_encode($theme_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+function utsm_sections_apply_to_theme_blocks($style_slug, $block_type) {
+    $style_data = utsm_sections_get_style($style_slug);
+    if (!$style_data) return false;
+    
+    $theme_json_path = get_stylesheet_directory() . '/theme.json';
+    if (!file_exists($theme_json_path)) return false;
+    
+    $theme_data = json_decode(file_get_contents($theme_json_path), true);
+    if (!$theme_data) return false;
+    
+    // Appliquer les couleurs aux blocs avec conversion de format
+    if (isset($style_data['styles']['color'])) {
+        if (!isset($theme_data['styles'])) $theme_data['styles'] = [];
+        if (!isset($theme_data['styles']['blocks'])) $theme_data['styles']['blocks'] = [];
+        if (!isset($theme_data['styles']['blocks'][$block_type])) $theme_data['styles']['blocks'][$block_type] = [];
+        
+        // Convertir les couleurs au format var:preset|color|xxx
+        $converted_colors = [];
+        foreach ($style_data['styles']['color'] as $property => $value) {
+            if (preg_match('/var\(--wp--preset--color--(.+)\)/', $value, $matches)) {
+                $converted_colors[$property] = 'var:preset|color|' . $matches[1];
+            } elseif (strpos($value, 'var:preset|color|') === 0) {
+                $converted_colors[$property] = $value;
+            } else {
+                $converted_colors[$property] = $value;
+            }
+        }
+        
+        $theme_data['styles']['blocks'][$block_type]['color'] = $converted_colors;
+    }
+    
+    return file_put_contents($theme_json_path, json_encode($theme_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+function utsm_sections_add_or_update_style($data) {
+    if (!wp_verify_nonce($data['utsm_section_nonce'], 'utsm_section_style_nonce')) {
+        return false;
+    }
+    
+    $slug = sanitize_title($data['slug']);
+    // Supprimer le préfixe 'section-' s'il existe
+    if (strpos($slug, 'section-') === 0) {
+        $slug = substr($slug, 8); // Enlever 'section-'
+    }
+    
+    $old_slug = $data['old_slug'];
+    // Supprimer le préfixe 'section-' de l'ancien slug aussi
+    if ($old_slug && strpos($old_slug, 'section-') === 0) {
+        $old_slug = substr($old_slug, 8);
+    }
+    
+    // Supprimer l'ancien fichier si modification
+    if ($old_slug && $old_slug !== $slug) {
+        utsm_sections_delete_style($old_slug);
+    }
+    
+    $style_data = [
+        '$schema' => 'https://schemas.wp.org/trunk/theme.json',
+        'version' => 3,
+        'title' => sanitize_text_field($data['name']),
+        'slug' => $slug,
+        'blockTypes' => array_map('sanitize_text_field', $data['block_types'] ?? []),
+        'styles' => [
+            'color' => []
+        ]
+    ];
+    
+    // Ajouter les couleurs si elles sont définies
+    if (!empty($data['background_color'])) {
+        $style_data['styles']['color']['background'] = sanitize_text_field($data['background_color']);
+    }
+    
+    if (!empty($data['text_color'])) {
+        $style_data['styles']['color']['text'] = sanitize_text_field($data['text_color']);
+    }
+    
+    // Ajouter la couleur de bordure si elle est définie
+    if (!empty($data['border_color'])) {
+        if (!isset($style_data['styles']['border'])) {
+            $style_data['styles']['border'] = [];
+        }
+        $style_data['styles']['border']['color'] = sanitize_text_field($data['border_color']);
+    }
+    
+    // Ajouter les styles de blocs internes
+    if (isset($data['internal_blocks']) && is_array($data['internal_blocks'])) {
+        $style_data['styles']['blocks'] = [];
+        
+        foreach ($data['internal_blocks'] as $block_data) {
+            if (!empty($block_data['type'])) {
+                $block_type = sanitize_text_field($block_data['type']);
+                $style_data['styles']['blocks'][$block_type] = ['color' => []];
+                
+                if (!empty($block_data['background_color'])) {
+                    $style_data['styles']['blocks'][$block_type]['color']['background'] = sanitize_text_field($block_data['background_color']);
+                }
+                
+                if (!empty($block_data['text_color'])) {
+                    $style_data['styles']['blocks'][$block_type]['color']['text'] = sanitize_text_field($block_data['text_color']);
+                }
+                
+                // Ajouter la couleur de bordure pour les blocs internes
+                if (!empty($block_data['border_color'])) {
+                    if (!isset($style_data['styles']['blocks'][$block_type]['border'])) {
+                        $style_data['styles']['blocks'][$block_type]['border'] = [];
+                    }
+                    $style_data['styles']['blocks'][$block_type]['border']['color'] = sanitize_text_field($block_data['border_color']);
+                }
+                
+                // Nettoyer les couleurs vides pour ce bloc
+                $style_data['styles']['blocks'][$block_type]['color'] = array_filter(
+                    $style_data['styles']['blocks'][$block_type]['color'], 
+                    function($value) {
+                        return $value !== null && $value !== '';
+                    }
+                );
+                
+                // Supprimer le bloc s'il n'a ni couleurs ni bordure
+                $has_color = !empty($style_data['styles']['blocks'][$block_type]['color']);
+                $has_border = !empty($style_data['styles']['blocks'][$block_type]['border']);
+                if (!$has_color && !$has_border) {
+                    unset($style_data['styles']['blocks'][$block_type]);
+                }
+            }
+        }
+        
+        // Supprimer la section blocks si elle est vide
+        if (empty($style_data['styles']['blocks'])) {
+            unset($style_data['styles']['blocks']);
+        }
+    }
+    
+    // Nettoyer les valeurs vides
+    $style_data['styles']['color'] = array_filter($style_data['styles']['color'], function($value) {
+        return $value !== null && $value !== '';
+    });
+    
+    $file_path = utsm_sections_get_styles_directory() . '/' . $slug . '.json';
+    
+    // Créer le dossier s'il n'existe pas
+    $dir = utsm_sections_get_styles_directory();
+    if (!file_exists($dir)) {
+        wp_mkdir_p($dir);
+    }
+    
+    return file_put_contents($file_path, json_encode($style_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+function utsm_sections_delete_style($slug) {
+    $file_path = utsm_sections_get_styles_directory() . '/' . $slug . '.json';
+    
+    if (file_exists($file_path)) {
+        return unlink($file_path);
+    }
+    
+    return false;
 }
