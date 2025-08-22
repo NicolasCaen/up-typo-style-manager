@@ -52,39 +52,15 @@ UP Typo Style Manager permet de créer, modifier et appliquer des styles typogra
 3. Modifiez les champs nécessaires
 4. Cliquez sur **Mettre à jour le style**
 
-### Appliquer un style globalement
-
-1. Dans la liste des styles, utilisez les boutons **Appliquer à H1**, **Appliquer à H2**, etc.
-2. Le style sera appliqué à tous les éléments de ce type dans le thème
-3. Les modifications sont sauvegardées dans le fichier `theme.json`
-
-### Filtrer les styles
-
-Utilisez le menu déroulant **Filtrer par type de bloc** pour afficher uniquement les styles compatibles avec un type de bloc spécifique.
 
 ## Structure des fichiers
 
-```
-up-typo-style-manager/
-├── up-typo-style-manager.php    # Fichier principal du plugin
-├── admin/
-│   └── admin-page.php           # Interface d'administration
-├── includes/
-│   ├── file-manager.php         # Gestion des fichiers et styles
-│   └── style-generator.php      # Génération CSS
-├── assets/
-│   └── admin.js                 # Scripts JavaScript
-├── README.md                    # Documentation
-└── CHANGELOG.md                 # Historique des versions
-```
+- `up-typo-style-manager.php` : Fichier principal du plugin
+- `admin/admin-page.php` : Interface d'administration
+- `includes/file-manager.php` : Gestion des fichiers de styles
+- `includes/style-generator.php` : Génération du CSS
 
-## Développement
-
-### Prérequis
-
-- WordPress 5.0+
-- PHP 7.4+
-- Thème compatible avec `theme.json`
+## API
 
 ### Fonctions principales
 
@@ -93,13 +69,34 @@ up-typo-style-manager/
 - `utsm_file_apply_to_theme_elements()` : Applique un style aux éléments globaux
 - `utsm_generate_css()` : Génère le CSS d'un style
 
+## Changelog
+
+### Version 1.1.0 (2025-08-22)
+
+**Nouvelles fonctionnalités :**
+- Ajout du support pour font-weight (100-900)
+- Ajout du support pour font-style (normal, italic, oblique)
+- Ajout du support pour text-transform (none, uppercase, lowercase, capitalize)
+- Option "Hériter (inherit)" pour toutes les nouvelles propriétés
+
+**Améliorations :**
+- Correction du mapping des éléments theme.json selon la documentation WordPress
+- Seuls les éléments supportés sont maintenant proposés (h1-h6, link, button, caption, cite)
+- Suppression des éléments non supportés (p, ul, li, blockquote)
+- Amélioration de la logique d'affichage des boutons d'application
+- Ajout de logs de debug pour le diagnostic des problèmes
+
+**Corrections de bugs :**
+- Correction de la régression avec l'application des styles aux liens
+- Les valeurs "inherit" sont maintenant correctement exclues lors de l'application aux éléments globaux
+- Amélioration de la gestion d'erreur lors de l'écriture du theme.json
+
+### Version 1.0.0
+- Version initiale du plugin
+
 ## Contribution
 
-1. Forkez le projet
-2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Committez vos changements (`git commit -am 'Ajout d'une nouvelle fonctionnalité'`)
-4. Poussez vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Créez une Pull Request
+Les contributions sont les bienvenues ! Merci de créer une issue ou une pull request.
 
 ## Licence
 
