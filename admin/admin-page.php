@@ -22,11 +22,17 @@ function utsm_admin_page() {
         
         // Gestion de l'application aux éléments du thème
         if (isset($_POST['apply_to_theme']) && isset($_POST['style_slug']) && isset($_POST['element_type'])) {
-            $result = utsm_file_apply_to_theme_elements($_POST['style_slug'], $_POST['element_type']);
+            $style_slug = sanitize_text_field($_POST['style_slug']);
+            $element_type = sanitize_text_field($_POST['element_type']);
+            
+            // Debug: afficher les valeurs reçues
+            echo '<div class="notice notice-info"><p>Debug: Tentative d\'application du style "' . $style_slug . '" à l\'élément "' . $element_type . '"</p></div>';
+            
+            $result = utsm_file_apply_to_theme_elements($style_slug, $element_type);
             if ($result) {
-                echo '<div class="notice notice-success"><p>Style appliqué aux éléments du thème avec succès!</p></div>';
+                echo '<div class="notice notice-success"><p>Style appliqué aux éléments du thème avec succès! (' . $result . ' octets écrits)</p></div>';
             } else {
-                echo '<div class="notice notice-error"><p>Erreur lors de l\'application du style au thème.</p></div>';
+                echo '<div class="notice notice-error"><p>Erreur lors de l\'application du style. Vérifiez les logs d\'erreur.</p></div>';
             }
         }
         
@@ -281,12 +287,11 @@ function utsm_admin_display_form($style_slug = null) {
                     'heading-h6' => 'Tous les H6'
                 ];
             } elseif ($block_type === 'core/paragraph') {
-                $element_buttons = ['paragraph' => 'Tous les paragraphes'];
+                // Note: 'p' n'est pas supporté dans theme.json elements
+                $element_buttons = [];
             } elseif ($block_type === 'core/list') {
-                $element_buttons = [
-                    'list' => 'Toutes les listes (ul/ol)',
-                    'list-item' => 'Tous les éléments de liste (li)'
-                ];
+                // Note: 'ul', 'ol', 'li' ne sont pas supportés dans theme.json elements
+                $element_buttons = [];
             } elseif ($block_type === 'core/quote') {
                 $element_buttons = [
                     'quote' => 'Toutes les citations (blockquote)',
@@ -294,15 +299,15 @@ function utsm_admin_display_form($style_slug = null) {
                 ];
             }
             
-            // Ajouter les boutons pour les éléments de blocs spécifiques
-            if (in_array($block_type, ['core/button', 'core/heading', 'core/paragraph', 'core/list', 'core/quote'])) {
+            // Ajouter les boutons pour les éléments génériques seulement si aucun élément spécifique n'a été défini
+            if (empty($element_buttons)) {
                 // Boutons pour les éléments HTML génériques
                 $generic_buttons = [
                     'button' => 'Tous les boutons',
                     'link' => 'Tous les liens (a)',
                     'caption' => 'Toutes les légendes'
                 ];
-                $element_buttons = array_merge($element_buttons ?? [], $generic_buttons);
+                $element_buttons = $generic_buttons;
             }
             
             foreach ($element_buttons as $element_type => $label):

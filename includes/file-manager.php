@@ -125,7 +125,8 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
     $theme_data = json_decode(file_get_contents($theme_json_path), true);
     if (!$theme_data) return false;
     
-    // Mapper les types d'éléments
+    // Mapper les types d'éléments selon la documentation WordPress
+    // Seuls certains éléments sont supportés dans theme.json elements
     $element_map = [
         'heading-h1' => 'h1',
         'heading-h2' => 'h2', 
@@ -133,15 +134,13 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
         'heading-h4' => 'h4',
         'heading-h5' => 'h5',
         'heading-h6' => 'h6',
-        'paragraph' => 'p',
         'body' => 'body',
-        'list' => 'ul',
-        'list-item' => 'li',
-        'quote' => 'blockquote',
+        'quote' => 'cite',  // cite est supporté, pas blockquote
         'cite' => 'cite',
         'button' => 'button',
-        'link' => 'a',
-        'caption' => 'figcaption'
+        'link' => 'link',   // WordPress utilise 'link' pas 'a'
+        'caption' => 'caption'
+        // Note: p, ul, li, blockquote ne sont PAS supportés dans theme.json elements
     ];
     
     $theme_element = $element_map[$element_type] ?? $element_type;
@@ -192,6 +191,17 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
         }
     }
     
-    // Sauvegarder le theme.json
-    return file_put_contents($theme_json_path, json_encode($theme_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    // Sauvegarder le theme.json avec gestion d'erreur
+    $result = file_put_contents($theme_json_path, json_encode($theme_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    
+    // Debug: log pour vérifier l'écriture
+    if ($result === false) {
+        error_log('UTSM: Erreur lors de l\'écriture du fichier theme.json: ' . $theme_json_path);
+        error_log('UTSM: Permissions du fichier: ' . (is_writable($theme_json_path) ? 'OK' : 'NON ACCESSIBLE'));
+        return false;
+    } else {
+        error_log('UTSM: Fichier theme.json mis à jour avec succès. Octets écrits: ' . $result);
+        error_log('UTSM: Element appliqué: ' . $element_type . ' -> ' . $theme_element);
+        return $result;
+    }
 }
