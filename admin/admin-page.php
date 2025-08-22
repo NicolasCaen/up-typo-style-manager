@@ -256,6 +256,15 @@ function utsm_admin_display_form($style_slug = null) {
         <h3>Appliquer ce style aux éléments globaux du thème</h3>
         <p>Appliquez ce style comme style par défaut pour tous les éléments de ce type dans le thème.</p>
         
+        <!-- Bouton pour appliquer aux styles globaux par défaut (body) -->
+        <form method="post" style="display: inline-block; margin-right: 10px; margin-bottom: 10px;">
+            <input type="hidden" name="style_slug" value="<?php echo $style_slug; ?>">
+            <input type="hidden" name="element_type" value="body">
+            <button type="submit" name="apply_to_theme" class="button button-primary">
+                Appliquer aux styles globaux par défaut (body)
+            </button>
+        </form>
+        
         <?php 
         $block_types = $style_data['blockTypes'] ?? [];
         foreach ($block_types as $block_type):

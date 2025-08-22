@@ -133,32 +133,54 @@ function utsm_file_apply_to_theme_elements($style_slug, $element_type) {
         'heading-h4' => 'h4',
         'heading-h5' => 'h5',
         'heading-h6' => 'h6',
-        'paragraph' => 'p'
+        'paragraph' => 'p',
+        'body' => 'body'
     ];
     
     $theme_element = $element_map[$element_type] ?? $element_type;
     
-    // Créer la structure si elle n'existe pas
-    if (!isset($theme_data['styles'])) {
-        $theme_data['styles'] = [];
-    }
-    if (!isset($theme_data['styles']['elements'])) {
-        $theme_data['styles']['elements'] = [];
-    }
-    if (!isset($theme_data['styles']['elements'][$theme_element])) {
-        $theme_data['styles']['elements'][$theme_element] = [];
-    }
-    
-    // Appliquer les styles de typographie
-    if (isset($style_data['styles']['typography'])) {
-        if (!isset($theme_data['styles']['elements'][$theme_element]['typography'])) {
-            $theme_data['styles']['elements'][$theme_element]['typography'] = [];
+    // Traitement spécial pour body (styles globaux)
+    if ($theme_element === 'body') {
+        // Créer la structure si elle n'existe pas
+        if (!isset($theme_data['styles'])) {
+            $theme_data['styles'] = [];
+        }
+        if (!isset($theme_data['styles']['typography'])) {
+            $theme_data['styles']['typography'] = [];
         }
         
-        $typography = $style_data['styles']['typography'];
-        foreach ($typography as $key => $value) {
-            if ($value && $value !== 'inherit') {
-                $theme_data['styles']['elements'][$theme_element]['typography'][$key] = $value;
+        // Appliquer les styles de typographie au niveau global
+        if (isset($style_data['styles']['typography'])) {
+            $typography = $style_data['styles']['typography'];
+            foreach ($typography as $key => $value) {
+                if ($value && $value !== 'inherit') {
+                    $theme_data['styles']['typography'][$key] = $value;
+                }
+            }
+        }
+    } else {
+        // Créer la structure si elle n'existe pas pour les éléments spécifiques
+        if (!isset($theme_data['styles'])) {
+            $theme_data['styles'] = [];
+        }
+        if (!isset($theme_data['styles']['elements'])) {
+            $theme_data['styles']['elements'] = [];
+        }
+        if (!isset($theme_data['styles']['elements'][$theme_element])) {
+            $theme_data['styles']['elements'][$theme_element] = [];
+        }
+        
+        // Appliquer les styles de typographie
+        if (isset($style_data['styles']['typography'])) {
+            if (!isset($theme_data['styles']['elements'][$theme_element]['typography'])) {
+                $theme_data['styles']['elements'][$theme_element]['typography'] = [];
+            }
+            
+            $typography = $style_data['styles']['typography'];
+            foreach ($typography as $key => $value) {
+                if ($value && $value !== 'inherit') {
+                    $theme_data['styles']['elements'][$theme_element]['typography'][$key] = $value;
+                }
             }
         }
     }
